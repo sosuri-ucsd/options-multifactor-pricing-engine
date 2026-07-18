@@ -1,5 +1,7 @@
 from datetime import date, timedelta
 
+import pytest
+
 from factors import vol_richness
 
 
@@ -77,3 +79,19 @@ def test_compute_scores_rich_iv_positively_after_history_builds():
     result = vol_richness.compute(ticker, as_of, near, far, spot=100)
 
     assert result.score > 0
+
+
+def test_iv_vol_of_vol_none_with_insufficient_history():
+    assert vol_richness.iv_vol_of_vol([0.20, 0.21, 0.19]) is None
+
+
+def test_iv_vol_of_vol_zero_for_flat_history():
+    assert vol_richness.iv_vol_of_vol([0.20] * 15) == 0.0
+
+
+def test_iv_vol_of_vol_positive_for_bouncing_history():
+    import math
+
+    history = [0.20 + (0.01 if i % 2 == 0 else -0.01) for i in range(15)]
+    result = vol_richness.iv_vol_of_vol(history)
+    assert result == pytest.approx(2.0 * math.sqrt(252), rel=1e-6)

@@ -31,6 +31,8 @@ Score = 0.7 * iv_rank_component + 0.3 * term_structure_component, each
 mapped independently onto [-1, 1] before combining, then clipped again by
 FactorResult.
 """
+import math
+import statistics
 from datetime import date as date_type
 from typing import Optional
 
@@ -71,6 +73,21 @@ def load_iv_history(
         if date_type.fromisoformat(h["date"]).toordinal() <= as_of.toordinal()
         and date_type.fromisoformat(h["date"]).toordinal() >= cutoff
     ]
+
+
+def iv_vol_of_vol(history: list[float], min_obs: int = 10) -> Optional[float]:
+    """Annualized standard deviation of day-over-day ATM IV changes, in vol
+    points (e.g. 8.0 for the IV bouncing around by +-8 points/year) -- the
+    input risk/sizing.py's vol-targeted position sizing needs to know how
+    much *this ticker's own* IV moves around, as opposed to the vol level
+    itself. Returns None below min_obs -- an annualized stdev from a
+    handful of daily diffs is too noisy to size a position against.
+    """
+    if len(history) < min_obs:
+        return None
+    daily_diffs_in_points = [(history[i] - history[i - 1]) * 100 for i in range(1, len(history))]
+    daily_stdev = statistics.pstdev(daily_diffs_in_points)
+    return daily_stdev * math.sqrt(252)
 
 
 def atm_iv_from_chain(chain: list[dict], spot: float) -> Optional[float]:

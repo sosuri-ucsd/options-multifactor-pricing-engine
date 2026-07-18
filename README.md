@@ -46,7 +46,7 @@ and expiration — there is no fixed weekly mechanic.
 - [x] Phase 9 — Deployment (scheduling, logging, alerting)
 - [x] `main.py` — wires all of the above into one end-to-end run
 
-All 189 unit tests pass (`pytest`), including the Monte Carlo engine's
+All 203 unit tests pass (`pytest`), including the Monte Carlo engine's
 validation against closed-form Black-Scholes and the walk-forward/placebo
 backtest mechanics. **None of this has been run against live data or a real
 Tradier sandbox account yet** — every test above mocks the network. Before
@@ -57,11 +57,26 @@ trusting any of it:
 2. Wire the backtest engine (`backtest/`) to real historical chains via
    `data/polygon_client.py` and run it over real history before ever
    passing `--live` to `main.py`.
-3. Review the known simplifications called out in `main.py`'s docstring —
-   dividend yield is hardcoded to 0, live position sizing is fixed at 1
-   contract (the vol-targeted sizing in `risk/sizing.py` isn't wired in
-   yet), and beta-weighted delta falls back to a beta of 1.0 when there
-   isn't enough history for a ticker.
+
+Since the first pass, three of the original simplifications have been
+wired up for real (with tests, still against mocked data):
+- **Dividend yield** is now estimated from trailing-twelve-month dividends
+  (`data/yfinance_client.py:estimate_dividend_yield`), not hardcoded to 0.
+- **Live position sizing** uses `risk/sizing.py`'s vol-targeted sizing,
+  driven by an IV-vol-of-vol estimate built from `vol_richness.py`'s
+  accumulated IV history (`factors/vol_richness.py:iv_vol_of_vol`) — it
+  falls back to 1 contract, with a logged warning, only until a ticker has
+  enough IV history (10+ observations) accumulated.
+- **Beta-weighted delta** now threads the real rolling beta through to the
+  live order path (it was computed but silently dropped before); when
+  there isn't enough history for a ticker, the 1.0 fallback fires with a
+  logged warning rather than silently.
+
+`main.py --loop` re-runs the pipeline on an interval during market hours
+(America/New_York, configurable in `config.py`) and appends every run to
+`logs/candidates_history.jsonl` rather than only overwriting the latest
+snapshot — intended for a scheduler (see `deployment/scheduling.md`), not
+for running unattended in a foreground shell indefinitely.
 
 Even with `--live`, `execution/tradier_broker.py` only talks to Tradier's
 *sandbox* (paper trading) endpoint — nothing in this codebase places a

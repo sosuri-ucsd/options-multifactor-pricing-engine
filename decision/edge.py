@@ -62,6 +62,7 @@ class Candidate:
     volume: Optional[int] = None
     delta: Optional[float] = None
     vega: Optional[float] = None
+    beta: Optional[float] = None
 
 
 def capital_required_covered_call(spot: float) -> float:

@@ -131,6 +131,11 @@ FAR_DTE_MAX = 90
 PRICE_HISTORY_LOOKBACK_DAYS = 450          # > HAR_RV_MIN_TRAINING_OBS + monthly lag + horizon, with margin
 DEFAULT_ACCOUNT_CAPITAL = 100_000.0        # placeholder; wire to the broker's real balance before going live
 RANKED_CANDIDATES_LOG_FILE = "ranked_candidates.json"
+CANDIDATES_HISTORY_LOG_FILE = "candidates_history.jsonl"  # append-only, one line per pipeline run
+DEFAULT_LOOP_INTERVAL_MINUTES = 10
+MARKET_TIMEZONE = "America/New_York"
+MARKET_OPEN_HOUR, MARKET_OPEN_MINUTE = 9, 30
+MARKET_CLOSE_HOUR, MARKET_CLOSE_MINUTE = 16, 0
 
 # --- Environment / credentials (names only, values read by clients) ---------
 

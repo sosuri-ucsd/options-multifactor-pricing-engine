@@ -1,7 +1,9 @@
+import math
 from datetime import date
 from unittest.mock import MagicMock
 
 import pandas as pd
+import pytest
 
 from data import yfinance_client
 
@@ -76,3 +78,36 @@ def test_get_dividends(monkeypatch):
     result = yfinance_client.get_dividends("AAPL")
 
     assert result == [{"date": "2026-02-01", "amount": 0.24}]
+
+
+def test_estimate_dividend_yield_no_dividends_is_zero(monkeypatch):
+    monkeypatch.setattr(yfinance_client, "get_dividends", lambda ticker: [])
+    assert yfinance_client.estimate_dividend_yield("AAPL", date(2026, 6, 1), spot=100.0) == 0.0
+
+
+def test_estimate_dividend_yield_computes_continuous_rate(monkeypatch):
+    monkeypatch.setattr(
+        yfinance_client,
+        "get_dividends",
+        lambda ticker: [
+            {"date": "2026-01-01", "amount": 0.50},
+            {"date": "2026-04-01", "amount": 0.50},
+        ],
+    )
+    q = yfinance_client.estimate_dividend_yield("AAPL", date(2026, 6, 1), spot=100.0)
+    # TTM dividends = 1.00, simple yield = 0.01, continuous q = ln(1.01)
+    assert q == pytest.approx(math.log(1.01))
+
+
+def test_estimate_dividend_yield_excludes_dividends_outside_lookback(monkeypatch):
+    monkeypatch.setattr(
+        yfinance_client,
+        "get_dividends",
+        lambda ticker: [{"date": "2024-01-01", "amount": 5.00}],  # far outside 365-day lookback
+    )
+    q = yfinance_client.estimate_dividend_yield("AAPL", date(2026, 6, 1), spot=100.0)
+    assert q == 0.0
+
+
+def test_estimate_dividend_yield_zero_spot_is_zero():
+    assert yfinance_client.estimate_dividend_yield("AAPL", date(2026, 6, 1), spot=0.0) == 0.0

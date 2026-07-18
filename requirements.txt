@@ -1,0 +1,10 @@
+polygon-api-client
+requests
+yfinance
+fredapi
+pandas
+numpy
+scipy
+python-dotenv
+streamlit
+pytest

@@ -1,0 +1,14 @@
+# credentials - never commit
+.env
+*.key
+*.pem
+
+# local cache / logs (generated at runtime)
+data/cache/*.sqlite
+logs/
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store

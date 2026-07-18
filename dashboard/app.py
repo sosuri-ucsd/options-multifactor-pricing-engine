@@ -5,6 +5,15 @@ broker or a data-vendor API, and never places or cancels an order.
 
 Run with: streamlit run dashboard/app.py
 """
+import sys
+from pathlib import Path
+
+# `streamlit run dashboard/app.py` puts this file's own directory
+# (dashboard/) at the front of sys.path, not the project root -- so
+# `dashboard` (the package containing this very file) can't be resolved
+# without adding the parent directory explicitly.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import pandas as pd
 import streamlit as st
 
